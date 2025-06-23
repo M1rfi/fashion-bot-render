@@ -1,28 +1,27 @@
 import os
 import json
-import random
-from io import BytesIO
+import numpy as np
 from PIL import Image
 import torch
-from telegram import Update, InputFile
+from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
-from sentence_transformers import SentenceTransformer, util
+from sentence_transformers import SentenceTransformer
 import logging
+
+# Отключаем GPU, чтобы не занимать память под cuda
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 # Настройка логирования
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Конфигурация
-TOKEN = os.getenv('TOKEN')  # Берем токен из переменных окружения
+TOKEN = os.getenv('TOKEN')
 DB_FILE = "wardrobe_db.json"
 IMG_DIR = "temp_images"
-
-# Создаем папку для временных файлов
 os.makedirs(IMG_DIR, exist_ok=True)
 
-# Инициализация модели
-model = SentenceTransformer('clip-ViT-B-32')
+# Инициализация модели (один раз при старте)
+model = SentenceTransformer('all-MiniLM-L6-v2')
 
 def load_db():
     try:
@@ -62,55 +61,47 @@ async def save_item(update: Update, context: ContextTypes.DEFAULT_TYPE):
         item_id = str(photo.file_id)
         filename = f"{IMG_DIR}/{item_id}.jpg"
 
-        # Сохраняем фото во временную папку
         await file.download_to_drive(filename)
-        
-        # Генерируем эмбеддинг
-        img = Image.open(filename)
+
+        # Открываем изображение и уменьшаем размер для экономии памяти
+        img = Image.open(filename).convert('RGB')
+        img = img.resize((224, 224))
+
+        # Получаем эмбеддинг
         img_emb = model.encode(img)
-        
-        # Сохраняем в базу
+
+        # Преобразуем в float16 для уменьшения размера
+        img_emb_16 = img_emb.astype(np.float16)
+
         db = load_db()
         db["items"].append({
             "id": item_id,
             "file_path": filename,
-            "embedding": img_emb.tolist(),
+            "embedding": img_emb_16.tolist(),
             "type": "clothes"
         })
         save_db(db)
-        
+
         await update.message.reply_text(f"✅ Вещь добавлена! Всего: {len(db['items'])}")
     except Exception as e:
         await update.message.reply_text(f"❌ Ошибка: {str(e)}")
         logger.error(f"Ошибка в save_item: {e}")
 
-# Заглушки для отсутствующих функций
+# Заглушки для остальных функций, оставь свои реализации
 async def generate_look(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("🎯 Генерация образа пока не реализована.")
+    pass
 
 async def random_look(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("🎲 Случайный образ пока не реализован.")
+    pass
 
 async def show_wardrobe(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    db = load_db()
-    if not db["items"]:
-        await update.message.reply_text("🧥 Ваш гардероб пуст.")
-        return
-    await update.message.reply_text(f"🧥 В гардеробе {len(db['items'])} вещ(ей).")
+    pass
 
 async def remove_item(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    db = load_db()
-    args = context.args
-    if not args:
-        await update.message.reply_text("❗ Укажите ID вещи: /remove <ID>")
-        return
-    item_id = args[0]
-    db["items"] = [item for item in db["items"] if item["id"] != item_id]
-    save_db(db)
-    await update.message.reply_text(f"🗑️ Вещь {item_id} удалена (если была).")
+    pass
 
 async def handle_reference(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("🔍 Поиск по описанию/референсу пока не реализован.")
+    pass
 
 def main():
     try:
