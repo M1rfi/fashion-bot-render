@@ -21,7 +21,7 @@ IMG_DIR = "temp_images"
 os.makedirs(IMG_DIR, exist_ok=True)
 
 # Инициализация модели (один раз при старте)
-model = SentenceTransformer('clip-ViT-B-32')
+model = SentenceTransformer('clip-ViT-B-16')
 
 def load_db():
     try:
