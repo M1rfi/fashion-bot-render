@@ -1,17 +1,52 @@
-# Файлы Python
+# Python файлы
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*.so
+.Python
+*.egg-info/
+*.egg
+.pytest_cache/
 
-# Файлы окружения
+# Файлы зависимостей
+venv/
+env/
+.venv/
+ENV/
+
+# Файлы окружения и конфигурации
 .env
 .env.local
+.env.*
+secrets.yml
+config.yml
+
+# Локальные данные и кэш
+temp_images/
+*.db
+*.sqlite
+wardrobe_db.json
 
 # Системные файлы
 .DS_Store
 Thumbs.db
+*.swp
+*.swo
 
-# Файлы IDE
+# IDE и редакторы
 .idea/
 .vscode/
+*.swp
+*.swo
+
+# Логи и отладочные данные
+*.log
+logs/
+
+# Файлы сборки и дистрибуции
+build/
+dist/
+*.tar.gz
+*.whl
+
+# Специфичные для Render
+render.yaml
